@@ -10,7 +10,17 @@ import csv
 conn = sqlite3.connect('test.db')
 conn.commit()
 
+cur = conn.cursor()
 
+cur.execute('''CREATE TABLE IF NOT EXISTS "dashboard" (
+	"id_name" VARCHAR(50) NOT NULL DEFAULT NULL,
+	"id" INTEGER(18) NULL,
+	"name" VARCHAR(32) NULL DEFAULT NULL,
+	"dict" TEXT NULL DEFAULT NULL,
+	PRIMARY KEY ("id_name")
+);''')
+
+conn.commit()
 #-----------------------------------------------------------------------------------------------------------------
 
 
@@ -186,30 +196,16 @@ async def newdb(ctx):
         dashboard[themename] = urls
         count += 1
 
-    id = ctx.author.id
+    id = str(ctx.author.id)
+    id_name = str(id) + '_' + name
+    dict = str(dashboard)
 
-    with open('db.csv', 'w') as db:
-        writer = csv.writer(db, delimiter=',')
-        writer.writerow([str(id), name, str(dashboard)])
+    cur.execute('''INSERT INTO dashboard(id_name, id, name, dict) VALUES (\"%s\",\"%s\",\"%s\",\"%s\")''' % (id_name, id, name, dict))
+    conn.commit()
 
-with open('db.csv', 'r') as db:
-    reader = csv.reader(db)
-    for row in reader:
-        print(', '.join(row))
-
-
-
-
-
-
-
-
-
-            
-
-        
-
-
+@bot.command(name='dashboard', help='Open up a dashboard')
+async def dashboard(ctx, *, name:str):
+    pass
 
 
 if __name__ == "__main__" :
