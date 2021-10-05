@@ -3,9 +3,7 @@ from discord.ext import commands
 import os
 from  dotenv import load_dotenv
 import youtube_dl
-import asyncio
 import sqlite3
-import csv
 
 conn = sqlite3.connect('test.db')
 conn.commit()
@@ -22,47 +20,18 @@ cur.execute('''CREATE TABLE IF NOT EXISTS "dashboard" (
 
 conn.commit()
 #-----------------------------------------------------------------------------------------------------------------
-
-
-youtube_dl.utils.bug_reports_message = lambda: ''
-
-ytdl_format_options = {
+ydl_opts = {
     'format': 'bestaudio/best',
-    'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
-}
-
-ffmpeg_options = {
-    'options': '-vn'
-}
-
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-
-class YTDLSource(discord.PCMVolumeTransformer):
-    def __init__(self, source, *, data, volume=0.5):
-        super().__init__(source, volume)
-        self.data = data    
-        self.title = data.get('title')
-        self.url = ""
-
-    @classmethod
-    async def from_url(cls, url, *, loop=None, stream=False):
-        loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
-        if 'entries' in data:   
-            # take first item from a playlist
-            data = data['entries'][0]
-        filename = data['title'] if stream else ytdl.prepare_filename(data)
-        return filename
-
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '192',
+    }],
+} 
 #-----------------------------------------------------------------------------------------------------------------
+
+def endSong(guild, path):
+    os.remove(path)
 
 def ordinaltg(n):
   return str(n) + {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
@@ -101,20 +70,35 @@ async def leave(ctx):
 
 @bot.command(name='play', help='To play song')
 async def play(ctx, url):
+
     if not ctx.message.author.voice:
-        await ctx.send("{} is not connected to a voice channel".format(ctx.message.author.name))
+        await ctx.send('you are not connected to a voice channel')
         return
+
     else:
         channel = ctx.message.author.voice.channel
-    await channel.connect()
 
-    server = ctx.message.guild
-    voice_channel = server.voice_client
+    voice_client = await channel.connect()
 
-    async with ctx.typing():
-        filename = await YTDLSource.from_url(url, loop=bot.loop)
-        voice_channel.play(discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=filename))
-        await ctx.send('**Now playing:** {}'.format(filename))
+    guild = ctx.message.guild
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        file = ydl.extract_info(url, download=True)
+        path = str(file['title']) + "-" + str(file['id'] + ".mp3")
+
+    voice_client.play(discord.FFmpegPCMAudio(path), after=lambda x: endSong(guild, path))
+    voice_client.source = discord.PCMVolumeTransformer(voice_client.source, 1)
+
+    await ctx.send(f'**Music: **{url}')
+    
+
+
+
+
+
+
+
+
 
 @bot.command(name='newdb', help='Create a new dashboard')
 async def newdb(ctx):
@@ -139,7 +123,7 @@ async def newdb(ctx):
             await reply.reply('Too long')
             continue
 
-    await reply.reply('Now we will define playlists links / music links / music name coupled with the theme name for {} dashboard'.format(name))
+    await reply.reply('Now we will define playlists links / music links coupled with the theme name for {} dashboard'.format(name))
         
     finished = False
     count = 1
