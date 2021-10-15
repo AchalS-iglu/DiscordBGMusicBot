@@ -4,6 +4,11 @@ import os
 from  dotenv import load_dotenv
 import youtube_dl
 import sqlite3
+import ast
+import random
+from num2words import num2words
+import emoji
+from music import MusicPlayer
 
 conn = sqlite3.connect('test.db')
 conn.commit()
@@ -20,14 +25,7 @@ cur.execute('''CREATE TABLE IF NOT EXISTS "dashboard" (
 
 conn.commit()
 #-----------------------------------------------------------------------------------------------------------------
-ydl_opts = {
-    'format': 'bestaudio/best',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }],
-} 
+
 #-----------------------------------------------------------------------------------------------------------------
 
 def endSong(guild, path):
@@ -38,67 +36,18 @@ def ordinaltg(n):
 
 #-----------------------------------------------------------------------------------------------------------------
 
-
 load_dotenv()
 
-token = os.getenv("DISCORD_TOKEN")
+exts=['music']
 
 intents = discord.Intents().all()
 client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!',intents=intents)
 
+
 @bot.event
 async def on_ready():
     print("Bot is live!")
-
-@bot.command(name='join', help='Tells the bot to join the voice channel')
-async def join(ctx):
-    if not ctx.message.author.voice:
-        await ctx.send("{} is not connected to a voice channel".format(ctx.message.author.name))
-        return
-    else:
-        channel = ctx.message.author.voice.channel
-    await channel.connect()
-
-@bot.command(name='leave', help='To make the bot leave the voice channel')
-async def leave(ctx):
-    voice_client = ctx.message.guild.voice_client
-    if voice_client.is_connected():
-        await voice_client.disconnect()
-    else:
-        await ctx.send("The bot is not connected to a voice channel.")
-
-@bot.command(name='play', help='To play song')
-async def play(ctx, url):
-
-    if not ctx.message.author.voice:
-        await ctx.send('you are not connected to a voice channel')
-        return
-
-    else:
-        channel = ctx.message.author.voice.channel
-
-    voice_client = await channel.connect()
-
-    guild = ctx.message.guild
-
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        file = ydl.extract_info(url, download=True)
-        path = str(file['title']) + "-" + str(file['id'] + ".mp3")
-
-    voice_client.play(discord.FFmpegPCMAudio(path), after=lambda x: endSong(guild, path))
-    voice_client.source = discord.PCMVolumeTransformer(voice_client.source, 1)
-
-    await ctx.send(f'**Music: **{url}')
-    
-
-
-
-
-
-
-
-
 
 @bot.command(name='newdb', help='Create a new dashboard')
 async def newdb(ctx):
@@ -130,7 +79,7 @@ async def newdb(ctx):
 
 
     while finished == False:
-        await reply.reply('Define the name of your {} theme!, reply with "finished" if you do not want any more themes.'.format((ordinaltg(count))))
+        await reply.reply('Define the name of your {} theme!, reply with "finished" if you do not want any more themes. (MAX THEMES = 9)'.format((ordinaltg(count))))
 
         themename = '12345678901234567890123456789012345678901234567890123456789012345678901234567890'
 
@@ -158,7 +107,7 @@ async def newdb(ctx):
 
         urls = []
 
-        await reply.reply('Now send all the links you want to associate with this theme. One per message. Type "Done" when finished.')
+        await reply.reply('Now send all the links or YouTube titles you want to associate with this theme. One per message. Type "Done" when finished.')
 
         Done = False
         
@@ -189,8 +138,55 @@ async def newdb(ctx):
 
 @bot.command(name='dashboard', help='Open up a dashboard')
 async def dashboard(ctx, *, name:str):
-    pass
+
+    id_name = str(ctx.author.id) + '_' + name
+
+
+    query = 'SELECT dict FROM dashboard WHERE id_name = \"%s\"' % (id_name)
+    cur.execute(query)
+    dict = str(cur.fetchall())
+    dict = ast.literal_eval(dict[3:-4])
+    themes = dict.items()
+
+    embed = discord.Embed(title=name, description="Your dashboard! Press the assigned button to switch themes!", color = (
+        discord.Color.from_rgb(random.randint(0,255), random.randint(0,255), random.randint(0,255))
+
+    ))
+    count = 1
+    for theme in themes:
+        theme_name = theme[0]
+        theme_playlist = theme[-1]
+        embed.add_field(name=theme_name, value=':' + str(num2words(count)) + ": " + str(theme_playlist), inline=False)
+        count += 1
+    embedded = await ctx.reply(embed=embed)
+
+    emojis = ('\U00000031\U0000fe0f\U000020e3', '\U00000032\U0000fe0f\U000020e3', '\U00000033\U0000fe0f\U000020e3', '\U00000034\U0000fe0f\U000020e3', '\U00000035\U0000fe0f\U000020e3', '\U00000036\U0000fe0f\U000020e3', '\U00000037\U0000fe0f\U000020e3', '\U00000038\U0000fe0f\U000020e3', '\U00000039\U0000fe0f\U000020e3')
+    for i in range(0, len(themes)):
+        await embedded.add_reaction(emojis[i])
+    
+    def check(reaction, user):
+        return user == ctx.message.author
+
+    # dashboard loop
+
+    something = True
+
+    while something:        
+        reaction, user = await bot.wait_for('reaction_add', check=check)
+        n = ( emoji.demojize(reaction.emoji) )[-2]
+        n = int(n)
+        print(list(themes))
+        theme_to_play = list(themes)[n]
+        theme_to_play = theme_to_play
+        
+        
+
+
+
+
+for i in exts:
+    bot.load_extension(i)
 
 
 if __name__ == "__main__" :
-    bot.run(token)
+    bot.run(os.getenv("DISCORD_TOKEN"))
