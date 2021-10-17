@@ -5,24 +5,23 @@ from  dotenv import load_dotenv
 import ast
 import random
 import asyncio
+import string
+import os
 from num2words import num2words
 import emoji
-import youtube_dl
 from music import ytdl_download_format_options, ytdl_format_options, Downloader
+from googleapiclient.discovery import build
 
-from bot import cur, conn, ordinaltg
+from bot import cur, conn, ordinaltg, youtube_api_key
 
 class Dashboard(commands.Cog, name='Dashboard'):
     def __init__(self, bot):
         self.bot = bot
-
     #Primary Logic
 
     @property
     def random_color(self):
         return discord.Color.from_rgb(random.randint(1, 255), random.randint(1, 255), random.randint(1, 255))
-
-    
 
     @command()
     async def newdb(self, ctx):
@@ -113,8 +112,11 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
     @command()
     async def dashboard(self, ctx, *, name:str):
-        # PRIMARY LOGIC!
-        
+        musicplayer = self.bot.get_cog('Music')
+
+        await musicplayer.leave(ctx)
+        await musicplayer.join(ctx)
+
         id_name = str(ctx.author.id) + '_' + name
 
 
@@ -142,14 +144,20 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
         # dashboard loop
 
-        bleh = True
+        bleh = True       
 
-        while bleh:        
+        while bleh:
             reaction, user = await self.bot.wait_for('reaction_add', check=check)
-            n = ( emoji.demojize(reaction.emoji) )[-2]
-            n = int(n) - 1
-            theme_to_play = ( list(themes)[n] )[-1]       
-            
+            if reaction != None:
+                await musicplayer.stop(ctx)
+                n = ( emoji.demojize(reaction.emoji) )[-2]
+                n = int(n) - 1
+                theme_to_play = ( list(themes)[n] )[-1]       
+                for x in theme_to_play:
+                    await musicplayer.play(ctx, song=x)
+                await reaction.remove(user)               
+
+
 
 def setup(bot):
     bot.add_cog(Dashboard(bot))

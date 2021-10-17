@@ -36,6 +36,7 @@ intents = discord.Intents().all()
 client = discord.Client(intents=intents)
 bot = commands.Bot(command_prefix='!',intents=intents)
 
+youtube_api_key = os.getenv("YOUTUBE_API_KEY")
 
 @bot.event
 async def on_ready():

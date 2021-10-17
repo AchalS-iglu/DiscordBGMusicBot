@@ -1,12 +1,14 @@
 import discord
 import asyncio
 import random
-import youtube_dl
+import yt_dlp as youtube_dl
 import string
 import os
 from discord.ext import commands
 from googleapiclient.discovery import build
 from discord.ext.commands import command
+
+from bot import youtube_api_key
 
 # import pymongo
 # NOTE: Import pymongo if you are using the database function commands
@@ -154,7 +156,7 @@ class MusicPlayer(commands.Cog, name='Music'):
         """
         Get info from youtube
         """
-        API_KEY = 'API_KEY'
+        API_KEY = youtube_api_key
         youtube = build('youtube', 'v3', developerKey=API_KEY)
         song_data = youtube.search().list(part='snippet').execute()
         return song_data[0]
@@ -214,10 +216,10 @@ class MusicPlayer(commands.Cog, name='Music'):
 
     async def voice_check(self, msg):
         """
-        function used to make bot leave voice channel if music not being played for longer than 2 minutes
+        function used to make bot leave voice channel if music not being played for longer than 5 minutes
         """
         if msg.voice_client is not None:
-            await asyncio.sleep(120)
+            await asyncio.sleep(300)    
             if msg.voice_client is not None and msg.voice_client.is_playing() is False and msg.voice_client.is_paused() is False:
                 await msg.voice_client.disconnect()
 
@@ -441,20 +443,19 @@ class MusicPlayer(commands.Cog, name='Music'):
         `Ex:` s.stop
         `Command:` stop()
         """
-        if msg.voice_client is None:
-            return await msg.send("Bot is not connect to a voice channel")
 
         if msg.author.voice is None:
             return await msg.send("You must be in the same voice channel as the bot")
 
         if msg.author.voice is not None and msg.voice_client is not None:
-            if msg.voice_client.is_playing() is True or self.player[msg.guild.id]['queue']:
+            if msg.voice_client.is_playing() is True :
+                #  or self.player[msg.guild.id]['queue']
                 self.player[msg.guild.id]['queue'].clear()
                 self.player[msg.guild.id]['repeat'] = False
                 msg.voice_client.stop()
                 return await msg.message.add_reaction(emoji='✅')
 
-            return await msg.send(f"**{msg.author.display_name}, there is no audio currently playing or songs in queue**")
+            # return await msg.send(f"**{msg.author.display_name}, there is no audio currently playing or songs in queue**")
 
     @commands.has_permissions(manage_channels=True)
     @command(aliases=['get-out', 'disconnect', 'leave-voice'])
@@ -631,7 +632,7 @@ class MusicPlayer(commands.Cog, name='Music'):
             await ctx.send(embed=embed)
 
     @volume.error
-    async def volume_error(self, msg,error):
+    async def volume_error(self, msg, error):
         if isinstance(error, commands.MissingPermissions):
             return await msg.send("Manage channels or admin perms required to change volume", delete_after=30)
 
