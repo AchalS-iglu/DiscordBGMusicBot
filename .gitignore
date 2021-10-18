@@ -1,2 +1,7 @@
 .env
 test.db
+testexample.py
+__pycache__/
+__pycache__/bot.cpython-39.pyc
+__pycache__/music.cpython-39.pyc
+__pycache__/dashboard.cpython-39.pyc
