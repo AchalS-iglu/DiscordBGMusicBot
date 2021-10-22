@@ -192,9 +192,9 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
         nodes = {
             "MAIN": {
                 "host": "bgmusicbot-lavalink.herokuapp.com",
-                "port": 2333,
-                "rest_uri": "https://bgmusicbot-lavalink.herokuapp.com:2333",
-                "password": f"{password}",
+                "port": 80,
+                "rest_uri": "https://bgmusicbot-lavalink.herokuapp.com:80",
+                "password": "boomboomshakalaka",
                 "identifier": "MAIN",
                 "region": "india",
             }
