@@ -188,13 +188,13 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
     async def start_nodes(self):
         await self.bot.wait_until_ready()
-        password = 'boomboomshakalaka'
+
         nodes = {
             "MAIN": {
-                "host": "bgmusicbot-lavalink.herokuapp.com",
-                "port": 80,
-                "rest_uri": "https://bgmusicbot-lavalink.herokuapp.com:80",
-                "password": "boomboomshakalaka",
+                "host": "127.0.0.1",
+                "port": 2333,
+                "rest_uri": "http://127.0.0.1:2333",
+                "password": "youshallnotpass",
                 "identifier": "MAIN",
                 "region": "india",
             }
