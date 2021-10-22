@@ -4,7 +4,11 @@ import os
 from  dotenv import load_dotenv
 import sqlite3
 from num2words import num2words
+import wavelink
+from pathlib import Path
 
+
+#SQLite Connection
 conn = sqlite3.connect('test.db')
 conn.commit()
 
@@ -19,18 +23,19 @@ cur.execute('''CREATE TABLE IF NOT EXISTS "dashboard" (
 );''')
 
 conn.commit()
-#-----------------------------------------------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------------------------------------------
+#Random Function
 
 def ordinaltg(n):
   return str(n) + {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
 
 #-----------------------------------------------------------------------------------------------------------------
 
+
 load_dotenv()
 
-exts=['music', 'dashboard']
+exts=['cogs.dashboard', 'cogs.music']
 
 intents = discord.Intents().all()
 client = discord.Client(intents=intents)
@@ -47,3 +52,4 @@ for i in exts:
 
 if __name__ == "__main__" :
     bot.run(os.getenv("DISCORD_TOKEN"))
+

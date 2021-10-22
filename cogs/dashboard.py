@@ -1,18 +1,13 @@
 import discord
 from discord.ext.commands import command
 from discord.ext import commands
-from  dotenv import load_dotenv
 import ast
 import random
-import asyncio
-import string
-import os
 from num2words import num2words
 import emoji
-from music import ytdl_download_format_options, ytdl_format_options, Downloader
-from googleapiclient.discovery import build
 
-from bot import cur, conn, ordinaltg, youtube_api_key
+from bot import cur, conn, ordinaltg
+
 
 class Dashboard(commands.Cog, name='Dashboard'):
     def __init__(self, bot):
@@ -112,10 +107,9 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
     @command()
     async def dashboard(self, ctx, *, name:str):
-        musicplayer = self.bot.get_cog('Music')
-
-        await musicplayer.leave(ctx)
-        await musicplayer.join(ctx)
+        
+        musiccog = self.bot.get_cog('Music')
+        musicplayer = musiccog.get_player(ctx)
 
         id_name = str(ctx.author.id) + '_' + name
 
@@ -149,12 +143,14 @@ class Dashboard(commands.Cog, name='Dashboard'):
         while bleh:
             reaction, user = await self.bot.wait_for('reaction_add', check=check)
             if reaction != None:
-                await musicplayer.stop(ctx)
+                musicplayer.queue.empty()
+                await musicplayer.stop()
                 n = ( emoji.demojize(reaction.emoji) )[-2]
                 n = int(n) - 1
                 theme_to_play = ( list(themes)[n] )[-1]       
                 for x in theme_to_play:
-                    await musicplayer.play(ctx, song=x)
+                    await musiccog.play_command(ctx, query=x)
+                musicplayer.queue.shuffle()
                 await reaction.remove(user)               
 
 
