@@ -5,9 +5,9 @@ import ast
 import random
 from num2words import num2words
 import emoji
-from googleapiclient.discovery import build
 
-from bot import cur, conn, ordinaltg, youtube_api_key
+from bot import cur, conn, ordinaltg
+
 
 class Dashboard(commands.Cog, name='Dashboard'):
     def __init__(self, bot):
@@ -107,10 +107,9 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
     @command()
     async def dashboard(self, ctx, *, name:str):
-        musicplayer = self.bot.get_cog('Music')
-
-        #await musicplayer.disconnect_command(ctx)
-        #await musicplayer.connect_command(ctx)
+        
+        musiccog = self.bot.get_cog('Music')
+        musicplayer = musiccog.get_player(ctx)
 
         id_name = str(ctx.author.id) + '_' + name
 
@@ -144,12 +143,14 @@ class Dashboard(commands.Cog, name='Dashboard'):
         while bleh:
             reaction, user = await self.bot.wait_for('reaction_add', check=check)
             if reaction != None:
-                await musicplayer.stop_command(ctx)
+                musicplayer.queue.empty()
+                await musicplayer.stop()
                 n = ( emoji.demojize(reaction.emoji) )[-2]
                 n = int(n) - 1
                 theme_to_play = ( list(themes)[n] )[-1]       
                 for x in theme_to_play:
-                    await musicplayer.play_command(ctx, query=x)
+                    await musiccog.play_command(ctx, query=x)
+                musicplayer.queue.shuffle()
                 await reaction.remove(user)               
 
 
