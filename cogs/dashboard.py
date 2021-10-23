@@ -8,11 +8,15 @@ import emoji
 
 from bot import cur, conn, ordinaltg
 
+emojis = ('\U0001f1e6','\U0001f1e7', '\U0001f1e8', '\U0001f1e9', '\U0001f1ea', '\U0001f1eb', '\U0001f1ec', '\U0001f1ed', '\U0001f1ee', '\U0001f1ef', '\U0001f1f0', '\U0001f1f1', '\U0001f1f2', '\U0001f1f3', '\U0001f1f4', '\U0001f1f5', '\U0001f1f6', '\U0001f1f7', '\U0001f1f8', '\U0001f1f9', '\U0001f1fa', '\U0001f1fb', '\U0001f1fc', '\U0001f1fd', '\U0001f1fe', '\U0001f1ff')
+
+
 class DashboardNotFound(commands.CommandError):
     pass
 
 
 class Dashboard(commands.Cog, name='Dashboard'):
+    """Commands to operate dashboards!"""
     def __init__(self, bot):
         self.bot = bot
     #Primary Logic
@@ -23,6 +27,9 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
     @command()
     async def newdb(self, ctx):
+        """Create a new dashboard"""
+
+
         name = 'PLACEHOLERNAME1234567890123456789012345678901234567890'
         dashboard = {}
 
@@ -52,8 +59,8 @@ class Dashboard(commands.Cog, name='Dashboard'):
         count = 1
 
 
-        while finished == False and count <= 9:
-            embed3 = discord.Embed(title='Create a Theme!', description='Define the name of your {} theme!, reply with "finished" if you do not want any more themes. (MAX THEMES = 9)'.format((ordinaltg(count))), color = self.random_color)
+        while finished == False and count <= 26:
+            embed3 = discord.Embed(title='Create a Theme!', description='Define the name of your {} theme!, reply with "finished" if you do not want any more themes. (MAX THEMES = 26)'.format((ordinaltg(count))), color = self.random_color)
             embed3m = await reply.reply(embed=embed3)
 
             themename = '12345678901234567890123456789012345678901234567890123456789012345678901234567890'
@@ -119,6 +126,7 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
     @command()
     async def dashboard(self, ctx, *, name:str):
+        """Open a dashboard!"""
         
         musiccog = self.bot.get_cog('Music')
         musicplayer = musiccog.get_player(ctx)
@@ -139,11 +147,15 @@ class Dashboard(commands.Cog, name='Dashboard'):
         for theme in themes:
             theme_name = theme[0]
             theme_playlist = theme[-1]
-            embed.add_field(name=theme_name, value=':' + str(num2words(count)) + ": " + str(theme_playlist), inline=False)
+            emoji = emojis[count-1]
+            value = ''
+            for x in theme_playlist:
+                value = value + f'{x}\n'
+            embed.add_field(name=emoji + ' - ' + theme_name, value=value.title(), inline=True)
+
             count += 1
         embedded = await ctx.reply(embed=embed)
 
-        emojis = ('\U00000031\U0000fe0f\U000020e3', '\U00000032\U0000fe0f\U000020e3', '\U00000033\U0000fe0f\U000020e3', '\U00000034\U0000fe0f\U000020e3', '\U00000035\U0000fe0f\U000020e3', '\U00000036\U0000fe0f\U000020e3', '\U00000037\U0000fe0f\U000020e3', '\U00000038\U0000fe0f\U000020e3', '\U00000039\U0000fe0f\U000020e3')
         for i in range(0, len(themes)):
             await embedded.add_reaction(emojis[i])
         await embedded.add_reaction('\U0000274e')
@@ -173,7 +185,8 @@ class Dashboard(commands.Cog, name='Dashboard'):
                 await musicplayer.stop()
                 await musicplayer.teardown()
                 await embedded.delete()
-                break          
+                break
+
     @dashboard.error
     async def dashboard_error(self,ctx,exc):
         if isinstance(exc, DashboardNotFound):
