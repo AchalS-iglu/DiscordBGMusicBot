@@ -8,6 +8,9 @@ import emoji
 
 from bot import cur, conn, ordinaltg
 
+class DashboardNotFound(commands.CommandError):
+    pass
+
 
 class Dashboard(commands.Cog, name='Dashboard'):
     def __init__(self, bot):
@@ -42,7 +45,6 @@ class Dashboard(commands.Cog, name='Dashboard'):
                 await reply.reply('Too long')
                 continue
         
-        #await embed1m.delete()
         embed2 = discord.Embed(title='Create a Dashboard!', description='Now we will define playlists links / music links / names coupled with the theme name for {} dashboard. Spotify links also work but currently spotify links are extremely slow and albums outright do not work.'.format(name), color = self.random_color)
         embed2m = await reply.reply(embed=embed2)
             
@@ -50,7 +52,7 @@ class Dashboard(commands.Cog, name='Dashboard'):
         count = 1
 
 
-        while finished == False:
+        while finished == False and count <= 9:
             embed3 = discord.Embed(title='Create a Theme!', description='Define the name of your {} theme!, reply with "finished" if you do not want any more themes. (MAX THEMES = 9)'.format((ordinaltg(count))), color = self.random_color)
             embed3m = await reply.reply(embed=embed3)
 
@@ -109,6 +111,11 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
         cur.execute('''INSERT INTO dashboard(id_name, id, name, dict) VALUES (\"%s\",\"%s\",\"%s\",\"%s\")''' % (id_name, id, name, dict))
         conn.commit()
+        await embed1m.delete()
+        await embed2m.delete()
+        await embed3m.delete()
+        await embed4m.delete()
+
 
     @command()
     async def dashboard(self, ctx, *, name:str):
@@ -122,6 +129,8 @@ class Dashboard(commands.Cog, name='Dashboard'):
         query = 'SELECT dict FROM dashboard WHERE id_name = \"%s\"' % (id_name)
         cur.execute(query)
         dict = str(cur.fetchall())
+        if len(dict) == 2:
+            raise DashboardNotFound
         dict = ast.literal_eval(dict[3:-4])
         themes = dict.items()
 
@@ -165,6 +174,10 @@ class Dashboard(commands.Cog, name='Dashboard'):
                 await musicplayer.teardown()
                 await embedded.delete()
                 break          
+    @dashboard.error
+    async def dashboard_error(self,ctx,exc):
+        if isinstance(exc, DashboardNotFound):
+            await ctx.send('Dashboard not found')
 
 
 
