@@ -4,7 +4,7 @@ from discord.ext import commands
 import ast
 import random
 from num2words import num2words
-import emoji
+import unicodedata
 
 from bot import cur, conn, ordinaltg
 
@@ -69,8 +69,9 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
                 reply = await self.bot.wait_for('message')
 
-                if reply.author.id == self.bot.user.id:
+                if reply.author.id == self.bot.user.id or reply.author.id != ctx.author.id:
                     continue
+
 
                 if reply.content.lower() == 'finished':
                     finished = True
@@ -97,7 +98,7 @@ class Dashboard(commands.Cog, name='Dashboard'):
             while Done == False:
                 reply = await self.bot.wait_for('message')
 
-                if reply.author.id == self.bot.user.id:
+                if reply.author.id == self.bot.user.id or reply.author.id != ctx.author.id:
                     continue
 
                 if reply.content.lower() == 'finished':
@@ -169,23 +170,23 @@ class Dashboard(commands.Cog, name='Dashboard'):
 
         while bleh:
             reaction, user = await self.bot.wait_for('reaction_add', check=check)
-            reactionstr = ( emoji.demojize(reaction.emoji) )
-            if 'keycap' in reactionstr:
-                musicplayer.queue.empty()
-                await musicplayer.stop()
-                n = reactionstr[-2]
-                n = int(n) - 1
-                theme_to_play = ( list(themes)[n] )[-1]       
-                for x in theme_to_play:
-                    await musiccog.play_command(ctx, query=x)
-                musicplayer.queue.shuffle()
-                await reaction.remove(user)     
-            else:
+            reactionstr = str(reaction.emoji)
+            if reactionstr == '\U0000274e':
                 musicplayer.queue.empty()
                 await musicplayer.stop()
                 await musicplayer.teardown()
                 await embedded.delete()
                 break
+            elif reactionstr in emojis:
+                musicplayer.queue.empty()
+                await musicplayer.stop()
+                n = emojis.index(reactionstr)
+                theme_to_play = ( list(themes)[n] )[-1]       
+                for x in theme_to_play:
+                    await musiccog.play_command(ctx, query=x)
+                musicplayer.queue.shuffle()
+                await reaction.remove(user)     
+
 
     @dashboard.error
     async def dashboard_error(self,ctx,exc):
