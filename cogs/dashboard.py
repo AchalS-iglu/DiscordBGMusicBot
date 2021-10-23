@@ -43,7 +43,7 @@ class Dashboard(commands.Cog, name='Dashboard'):
                 continue
         
         #await embed1m.delete()
-        embed2 = discord.Embed(title='Create a Dashboard!', description='Now we will define playlists links / music links / names coupled with the theme name for {} dashboard'.format(name), color = self.random_color)
+        embed2 = discord.Embed(title='Create a Dashboard!', description='Now we will define playlists links / music links / names coupled with the theme name for {} dashboard. Spotify links also work but currently spotify links are extremely slow and albums outright do not work.'.format(name), color = self.random_color)
         embed2m = await reply.reply(embed=embed2)
             
         finished = False

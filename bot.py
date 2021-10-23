@@ -7,7 +7,6 @@ from num2words import num2words
 import wavelink
 from pathlib import Path
 
-
 #SQLite Connection
 conn = sqlite3.connect('test.db')
 conn.commit()
