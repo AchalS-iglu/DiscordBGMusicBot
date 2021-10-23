@@ -354,6 +354,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
     @commands.command(name="next", aliases=["skip"])
     async def next_command(self, ctx):
+        """Play the next track in queue"""
         player = self.get_player(ctx)
 
         if not player.queue.upcoming:
@@ -390,6 +391,7 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
 
     @commands.command(name="shuffle")
     async def shuffle_command(self, ctx):
+        """Shuffle the queue"""
         player = self.get_player(ctx)
         player.queue.shuffle()
         await ctx.send("Queue shuffled.")
