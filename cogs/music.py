@@ -1,5 +1,5 @@
 import random
-from discord.ext.commands import context
+import spotipy
 
 import wavelink
 from discord.ext import commands
@@ -9,14 +9,8 @@ import re
 import typing as t
 import datetime as dt
 import aiohttp
-import spotify
-from dotenv import load_dotenv
-import os
 
-load_dotenv()
-spsecret = os.getenv('SPOTIFY_SECRET')
-spotify_client = spotify.Client("b0be3e4ae85a41d5baaaf5fb786d88f1", spsecret)
-spotify_http_client = spotify.HTTPClient("b0be3e4ae85a41d5baaaf5fb786d88f1", spsecret)
+from models.spotify import get_spotify_tracks
 
 URL_REGEX = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
 LYRICS_URL = "https://some-random-api.ml/lyrics?title="
@@ -259,61 +253,31 @@ class Music(commands.Cog, wavelink.WavelinkMixin):
             query = query.strip('<>')
 
             if SPOTIFY_URL_REG.match(query):
-                spoturl_check = SPOTIFY_URL_REG.match(query)
-                search_type = spoturl_check.group('type')
-                spotify_id = spoturl_check.group('id')
-
-                if search_type == 'playlist':
-                    results = spotify.Playlist(client=spotify_client, data=await spotify_http_client.get_playlist(spotify_id))
-                    try:
-                        search_tracks = await results.get_all_tracks()
-                    except:
-                        raise commands.CommandError("I was not able to find this playlist! Please try again or use a different link.")
-                    
-                elif search_type == "album":
-                    results = await spotify_client.get_album(spotify_id=spotify_id)
-                    try:
-                        search_tracks = await results.get_all_tracks()
-                    except:
-                        raise commands.CommandError("I was not able to find this album! Please try again or use a different link.")
-                        
-
-                elif search_type == 'track':
-                    results = await spotify_client.get_track(spotify_id=spotify_id)
-                    search_tracks = [results]
-
-
+                search_tracks = get_spotify_tracks(query)
                 tracks = [
                         wavelink.Track(
-                                id_= 'spotify',
-                                info={'title': track.name or 'Unknown', 'author': ', '.join(artist.name for artist in track.artists) or 'Unknown',
-                                            'length': track.duration or 0, 'identifier': track.id or 'Unknown', 'uri': track.url or 'spotify',
-                                            'isStream': False, 'isSeekable': False, 'position': 0, 'thumbnail': track.images[0].url if track.images else None},
+                            id_="spotify",
+                            info={
+                                "title": track["name"] or "Unknown",
+                                "author": ", ".join(artist["name"] for artist in track["artists"]) or "Unknown",
+                                "length": track["duration_ms"] or 0,
+                                "identifier": track["id"] or "Unknown",
+                                "uri": track["external_urls"]['spotify'] or "spotify",
+                                "isStream": False,
+                                "isSeekable": False,
+                                "position": 0,
+                                "thumbnail": ((track['album'])['images'][0])['url'] if track['album']['images'] else None,
+                            },
                         ) for track in search_tracks
                     ]
-
                 if not tracks:
                     raise commands.CommandError("The URL you put is either not valid or doesn't exist!")
     
-                if search_type == "playlist":
-                    for track in tracks:
-                        track = f"ytsearch:{track}"
-                        await player.add_tracks(ctx, await self.wavelink.get_tracks(track))
-
-                    await ctx.send(f"Queued **{len(tracks)}** tracks")
-
-                elif search_type == "album":
-                    for track in tracks:
-                        track = f"ytsearch:{track}"
-                        print(track)
-                        await player.add_tracks(ctx, await self.wavelink.get_tracks(track))
-
-                    await ctx.send(f"Queued **{len(tracks)}** tracks")
-                else:
-                    if player.is_playing:
-                        await ctx.send(f"Queued **{len(tracks)}** tracks")
-                    track = f"ytsearch:{tracks[0]}"
+                for track in tracks:
+                    track = f"ytsearch:{track} - {track.author}"
                     await player.add_tracks(ctx, await self.wavelink.get_tracks(track))
+
+                await ctx.send(f"Queued **{len(tracks)}** tracks")
 
             elif not re.match(URL_REGEX, query):
                 query = f"ytsearch:{query}"
